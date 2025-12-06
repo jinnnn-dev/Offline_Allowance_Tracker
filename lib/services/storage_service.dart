@@ -20,7 +20,47 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_allowanceKey);
     if (jsonString == null) return null;
-    return Allowance.fromJson(jsonDecode(jsonString));
+    final allowance = Allowance.fromJson(jsonDecode(jsonString));
+
+    // Auto-reset logic: if frequency is daily and lastResetDate is before today,
+    // or if frequency is weekly and lastResetDate is before the start of the current week,
+    // update the stored allowance's lastResetDate so the app treats the allowance as reset.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    bool needsReset = false;
+    DateTime newResetDate = allowance.lastResetDate;
+
+    if (allowance.frequency == AllowanceFrequency.daily) {
+      if (!_isSameDay(allowance.lastResetDate, today)) {
+        needsReset = true;
+        newResetDate = today;
+      }
+    } else {
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1)); // Monday as start
+      final lastReset = DateTime(
+        allowance.lastResetDate.year,
+        allowance.lastResetDate.month,
+        allowance.lastResetDate.day,
+      );
+      if (lastReset.isBefore(startOfWeek)) {
+        needsReset = true;
+        newResetDate = startOfWeek;
+      }
+    }
+
+    if (needsReset) {
+      final updated = Allowance(
+        amount: allowance.amount,
+        frequency: allowance.frequency,
+        lastResetDate: newResetDate,
+      );
+      await saveAllowance(updated);
+      return updated;
+    }
+
+    return allowance;
   }
 
   static Future<void> saveExpense(Expense expense) async {

@@ -512,6 +512,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+    Widget _buildStreakBannerTop() {
+      if (underBudgetStreak <= 0) return const SizedBox.shrink();
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.orange.shade600, Colors.deepOrange.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '🔥 ',
+              style: TextStyle(fontSize: 24),
+            ),
+            Text(
+              '$underBudgetStreak Day Streak!',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            Text(
+              ' 🔥',
+              style: TextStyle(fontSize: 24),
+            ),
+          ],
+        ),
+      );
+    }
+
   double _calculateMonthlySaved(List<SavingsEntry> entries, DateTime reference) {
     return entries
         .where((entry) =>
@@ -540,7 +578,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final today = _normalizeDate(DateTime.now());
     int streak = 0;
-    for (int i = 0; i < 30; i++) {
+      for (int i = 0; i <= 30; i++) {
       final date = today.subtract(Duration(days: i));
       final spent = totals[_dateKey(date)] ?? 0;
       if (spent <= dailyAllowance) {
@@ -637,6 +675,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                  _buildStreakBannerTop(),
                 if (_shouldShowCautionBanner) _buildCautionBanner(),
                 if (showSavingsPrompt)
                   _buildSavingsBanner(
